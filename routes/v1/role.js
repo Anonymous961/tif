@@ -1,6 +1,5 @@
 const express = require('express')
-const client = require("@prisma/client")
-const { PrismaClient } = client;
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { Snowflake } = require("@theinternetfolks/snowflake")
 
@@ -10,10 +9,21 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const role = await prisma.role.findMany()
-        res.json(role)
+        console.log(role)
+        res.json({
+            "status": true,
+            "content": {
+                "meta": {
+                    "total": 2,
+                    "pages": 1,
+                    "page": 1
+                },
+                "data": role   //unable to serialize
+            }
+        })
     } catch (error) {
         console.error(error)
-        res.status(200).json({})
+        res.status(400).json({})
     }
 })
 router.post('/', async (req, res) => {
@@ -34,7 +44,7 @@ router.post('/', async (req, res) => {
         })
     } catch (error) {
         console.error(error)
-        res.status(200).json({ error })
+        res.status(400).json({ error })
     }
 })
 
