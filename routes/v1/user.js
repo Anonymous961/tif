@@ -5,6 +5,7 @@ const { Snowflake } = require('@theinternetfolks/snowflake');
 const jwt = require("jsonwebtoken");
 const reqAuth = require('../../middleware/authmiddleware');
 const prisma = new PrismaClient();
+const validator = require("validator")
 const router = express.Router()
 
 function createToken(id) {
@@ -17,6 +18,18 @@ router.post("/signup", async (req, res) => {
     try {
         if (!name || !email || !password) {
             throw Error("All fields are required!!");
+        }
+
+        if (name.length < 2) {
+            throw Error("Length is too short")
+        }
+
+        if (!validator.isEmail(email)) {
+            throw Error("Not a valid email")
+        }
+
+        if (password.length < 6) {
+            throw Error("Password is too short")
         }
 
         const exists = await prisma.user.findFirst({
@@ -53,7 +66,7 @@ router.post("/signup", async (req, res) => {
         });
     } catch (error) {
         console.error(error)
-        res.status(400).json({ error })
+        res.status(400).json({ error: error.message })
     }
 })
 
@@ -89,7 +102,7 @@ router.post('/signin', async (req, res) => {
         })
     } catch (error) {
         console.error(error);
-        res.status(400).json({ error })
+        res.status(400).json({ error: error.message })
     }
 })
 
@@ -109,7 +122,7 @@ router.get("/me", reqAuth, async (req, res) => {
         })
     } catch (error) {
         console.error(error)
-        res.status(400).json({ error })
+        res.status(400).json({ error: error.message })
     }
 
 })

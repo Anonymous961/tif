@@ -17,6 +17,7 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "prisma": "^5.14.0",
-    "slug": "^9.1.0"
+    "slug": "^9.1.0",
+    "validator": "^13.12.0"
   }
 }

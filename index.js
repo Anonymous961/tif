@@ -4,6 +4,10 @@ const rootRouter = require("./routes/v1/index")
 const app = express()
 
 app.use(express.json())
+app.use((req, res, next) => {
+    console.log(req.path, req.method)
+    next()
+})
 app.use("/v1", rootRouter)
 
 
