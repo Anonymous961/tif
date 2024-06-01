@@ -37,7 +37,6 @@ router.post("/signup", async (req, res) => {
                 email
             }
         })
-        console.log(exists)
         if (exists) {
             throw Error("User already exists")
         }
@@ -53,8 +52,6 @@ router.post("/signup", async (req, res) => {
             }
         })
         const token = createToken(user.id.toString(), user.email);
-        console.log(token)
-        console.log({ ...user, id: user.id.toString() });
         res.json({
             "status": true,
             "content": {

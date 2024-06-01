@@ -76,12 +76,10 @@ router.delete("/:id", reqAuth, async (req, res) => {
                 }
             }
         })
-        // console.log(isAdmin);
         if (!isAdmin) {
             return res.status(403).json({ error: "NOT_ALLOWED_ACCESS" });
         }
 
-        console.log({ userId, communityId });
 
         const isMember = await prisma.member.findFirst({
             where: {

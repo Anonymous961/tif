@@ -85,7 +85,14 @@ router.get("/", async (req, res) => {
             take: limit
         });
 
-        const serializedData = utils.serializeJSONWithBigInt(communities);
+        const users = await prisma.user.findMany();
+
+        const communitiesWithOwners = communities.map(community => ({
+            ...community,
+            owners: users.filter(user => community.owners.includes(user.id)).map(user => ({ id: user.id, name: user.name }))
+        }));
+
+        const serializedData = utils.serializeJSONWithBigInt(communitiesWithOwners);
 
         res.json({
             "status": true,
@@ -106,7 +113,6 @@ router.get("/", async (req, res) => {
 
 router.get("/:id/members", async (req, res) => {
     const communityId = req.params.id;
-    console.log(communityId);
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
@@ -165,21 +171,35 @@ router.get("/me/owner", reqAuth, async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const totalCommunities = await prisma.community.count({
+
+        const myCommunities = await prisma.member.findMany({
             where: {
-                owner: { some: { id: req.user.id } },
-            }
-        })
-        const myCommunities = await prisma.community.findMany({
-            where: {
-                owner: { some: { id: req.user.id } },
+                userId: req.user.id,
+            },
+            include: {
+                community: {
+                    select: {
+                        owners: true
+                    }
+                }
             },
             skip,
             take: limit
         });
-        const totalPages = Math.ceil(totalCommunities / limit);
-        console.log(myCommunities);
-        const serializedData = utils.serializeJSONWithBigInt(myCommunities)
+
+        const ownedCommunities = myCommunities.filter(c => c.community.owners.includes(req.user.id)).map(c => {
+            const { community, ...rest } = c;
+
+            return ({
+                ...rest,
+                owner: req.user.id
+            })
+        });
+
+        const totalPages = Math.ceil(ownedCommunities.length / limit);
+        const totalCommunities = ownedCommunities.length;
+        const serializedData = utils.serializeJSONWithBigInt(ownedCommunities);
+
         res.json({
             "status": true,
             "content": {
@@ -202,31 +222,42 @@ router.get("/me/member", reqAuth, async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
+
         const totalCommunities = await prisma.member.count({
             where: {
-                user: { some: { id: req.user.id } },
+                userId: req.user.id,
             }
         })
 
         const myCommunities = await prisma.member.findMany({
             where: {
-                user: { some: { id: req.user.id } },
+                userId: req.user.id,
             },
             include: {
                 community: {
-                    include: {
-                        owner: {
-                            select: {
-                                id: true,
-                                name: true
-                            }
-                        }
+                    select: {
+                        owners: true
                     }
                 }
-            }
+            },
+            skip,
+            take: limit
         });
+
+        const users = await prisma.user.findMany();
+
+        const communitiesWithOwners = myCommunities.map(c => {
+            const { community, ...rest } = c;
+
+            return ({
+                ...rest,
+                owners: users.filter(user => community.owners.includes(user.id)).map(user => ({ id: user.id, name: user.name }))
+            })
+        });
+
         const totalPages = Math.ceil(totalCommunities / limit);
-        const serializedData = utils.serializeJSONWithBigInt(myCommunities)
+        const serializedData = utils.serializeJSONWithBigInt(communitiesWithOwners);
+
         res.json({
             "status": true,
             "content": {
